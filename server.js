@@ -1,45 +1,55 @@
-# Sunshine Mail Poem Tool — Deployment Guide
+const express = require('express');
+const path = require('path');
 
-Follow this exactly, in order. It's all clicking, no coding.
+const app = express();
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-## Part 1 — Get your Claude API key
-1. Go to https://console.anthropic.com and sign up (separate from claude.ai).
-2. Click **Get API Keys** (or **Settings → API Keys**).
-3. Click **Create Key**, name it "Sunshine Mail", and copy the long key (starts with `sk-ant-`). Save it somewhere safe — you'll paste it once and won't see it again.
-4. Add a small amount of credit (e.g. $10) under **Billing**. Each poem generation costs a fraction of a cent.
+const PORT = process.env.PORT || 3000;
+const API_KEY = process.env.ANTHROPIC_API_KEY;
 
-## Part 2 — Put the code on GitHub (free)
-1. Go to https://github.com and sign up.
-2. Click the **+** in the top right → **New repository**.
-3. Name it `sunshine-mail-app`, keep it **Public** or **Private** (either works), click **Create repository**.
-4. On the next page, click **uploading an existing file**.
-5. Drag in all the files from this folder (`server.js`, `package.json`, and the `public` folder with `index.html` inside).
-6. Click **Commit changes**.
+app.post('/api/generate', async (req, res) => {
+  if (!API_KEY) {
+    return res.status(500).json({ error: 'Server is missing ANTHROPIC_API_KEY. Add it in your hosting dashboard under Environment Variables.' });
+  }
 
-## Part 3 — Deploy on Render (free)
-1. Go to https://render.com and sign up using your GitHub account.
-2. Click **New +** → **Web Service**.
-3. Choose your `sunshine-mail-app` repository and click **Connect**.
-4. Leave the defaults, but confirm:
-   - **Build Command:** `npm install`
-   - **Start Command:** `npm start`
-5. Scroll to **Environment Variables** → click **Add Environment Variable**.
-   - Key: `ANTHROPIC_API_KEY`
-   - Value: paste the key from Part 1
-6. Click **Create Web Service**. Wait a minute or two while it builds — you'll see a live log.
-7. When it's done, Render gives you a working URL like `sunshine-mail-app.onrender.com`. Click it — your tool is live.
+  const { prompt } = req.body || {};
+  if (!prompt || typeof prompt !== 'string') {
+    return res.status(400).json({ error: 'Missing prompt.' });
+  }
 
-## Part 4 — Point your subdomain at it
-1. In Render, on your service page, go to **Settings → Custom Domains → Add Custom Domain**.
-2. Type `write.hellosunshinemail.com` and click **Save**. Render will show you a CNAME target (something like `sunshine-mail-app.onrender.com`).
-3. Go to your domain account at Porkbun, open `hellosunshinemail.com` → **DNS Records**.
-4. Add a new record:
-   - Type: **CNAME**
-   - Host: `write`
-   - Answer: the target Render gave you
-5. Save. DNS changes can take anywhere from a few minutes to a couple hours to work everywhere.
-6. Once it's live, `write.hellosunshinemail.com` will show your poem tool directly.
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
 
-## Notes
-- Render's free tier "sleeps" the tool after 15 minutes of no visitors — the first visit after that takes ~30–60 seconds to wake up, then it's fast again. If that bothers you once you have real customers, Render's paid tier ($7/mo) keeps it always-on.
-- If you ever need to update the poem tool's wording or add a feature, come back to this chat, make the change, and re-upload the changed files to GitHub — Render automatically redeploys.
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({ error: 'Claude API error: ' + errText });
+    }
+
+    const data = await response.json();
+    const text = (data.content || [])
+      .map(block => (block.type === 'text' ? block.text : ''))
+      .join('\n')
+      .trim();
+
+    res.json({ text });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error: ' + err.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log('Sunshine Mail poem tool running on port ' + PORT);
+});
