@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sunshine Mail — Poetry & Lyrics Generator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Karla:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF3DF;
+    --card:#FFFFFF;
+    --ink:#2B3550;
+    --ink-soft:#5B6480;
+    --sun:#F2A93B;
+    --sun-deep:#D98C1F;
+    --postmark:#C1442B;
+    --sky:#6FA8A3;
+    --line:#E2D3AE;
+    --shadow: 0 18px 40px -20px rgba(43,53,80,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(242,169,59,0.16), transparent 40%),
+      radial-gradient(circle at 92% 85%, rgba(111,168,163,0.14), transparent 45%),
+      var(--paper);
+    color:var(--ink);
+    font-family:'Karla', sans-serif;
+    min-height:100vh;
+    padding:32px 20px 64px;
+  }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  header.top{ text-align:center; margin-bottom:34px; }
+  .brand{ display:inline-flex; align-items:center; gap:10px; }
+  .brand .sun-icon{
+    width:34px; height:34px; border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #FFD98C, var(--sun) 70%);
+    box-shadow: 0 0 0 4px rgba(242,169,59,0.18);
+  }
+  h1{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:clamp(32px, 5vw, 46px);
+    margin:14px 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .tagline{
+    color:var(--ink-soft);
+    font-size:15px;
+    max-width:480px;
+    margin:0 auto;
+    line-height:1.5;
+  }
+
+  .desk{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width: 860px){ .desk{ grid-template-columns: 1fr; } }
+
+  /* ---- Compose panel ---- */
+  .compose{
+    background:var(--card);
+    border-radius:18px;
+    padding:28px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--line);
+  }
+  .mode-toggle{
+    display:flex;
+    background:var(--paper);
+    border-radius:999px;
+    padding:4px;
+    margin-bottom:22px;
+    border:1px solid var(--line);
+  }
+  .mode-toggle button{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:10px 14px;
+    border-radius:999px;
+    font-family:'Karla';
+    font-weight:600;
+    font-size:14px;
+    color:var(--ink-soft);
+    cursor:pointer;
+    transition: all .2s ease;
+  }
+  .mode-toggle button.active{
+    background:var(--ink);
+    color:#fff;
+  }
+
+  .field{ margin-bottom:18px; }
+  .field label{
+    display:block;
+    font-size:12.5px;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+    color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+  select, input[type="text"], textarea{
+    width:100%;
+    border:1.5px solid var(--line);
+    background:#fffdf8;
+    border-radius:10px;
+    padding:11px 13px;
+    font-family:'Karla';
+    font-size:14.5px;
+    color:var(--ink);
+    appearance:none;
+    -webkit-appearance:none;
+  }
+  select{
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235B6480' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position: right 12px center;
+    background-size:16px;
+    padding-right:36px;
+  }
+  select:focus, input:focus, textarea:focus{
+    outline:none;
+    border-color:var(--sun-deep);
+    box-shadow:0 0 0 3px rgba(242,169,59,0.22);
+  }
+  textarea{ min-height:74px; resize:vertical; font-family:'Karla'; line-height:1.4; }
+  .hint{ font-size:12px; color:var(--ink-soft); margin-top:6px; line-height:1.45; }
+
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  @media (max-width:480px){ .grid2{ grid-template-columns:1fr; } }
+
+  .send-btn{
+    width:100%;
+    border:none;
+    background: linear-gradient(135deg, var(--sun), var(--sun-deep));
+    color:#3A2406;
+    font-family:'Karla';
+    font-weight:700;
+    font-size:15.5px;
+    padding:14px 18px;
+    border-radius:12px;
+    cursor:pointer;
+    margin-top:6px;
+    box-shadow: 0 10px 24px -10px rgba(217,140,31,0.7);
+    transition: transform .15s ease;
+  }
+  .send-btn:hover{ transform: translateY(-1px); }
+  .send-btn:disabled{ opacity:.6; cursor:default; transform:none; }
+
+  .error-box{
+    margin-top:14px;
+    background:#FCEAE6;
+    border:1px solid #E8B8AC;
+    color:#8A2F1C;
+    padding:11px 13px;
+    border-radius:10px;
+    font-size:13.5px;
+    display:none;
+  }
+
+  /* ---- Postcard panel ---- */
+  .postcard-stage{ position:sticky; top:24px; }
+  .postcard{
+    position:relative;
+    background:var(--card);
+    border-radius:14px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    min-height:420px;
+    display:flex;
+    flex-direction:column;
+  }
+  .airmail-edge{
+    height:9px;
+    background: repeating-linear-gradient(135deg,
+      var(--postmark) 0 14px, var(--card) 14px 22px,
+      var(--sky) 22px 36px, var(--card) 36px 44px);
+  }
+  .postcard-body{
+    flex:1;
+    padding:30px 28px 26px;
+    display:flex;
+    flex-direction:column;
+  }
+  .postcard-meta{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:18px;
+  }
+  .meta-left .occasion-tag{
+    display:inline-block;
+    font-size:11.5px;
+    font-weight:700;
+    letter-spacing:.07em;
+    text-transform:uppercase;
+    color:var(--sky);
+    background:rgba(111,168,163,0.12);
+    padding:4px 10px;
+    border-radius:999px;
+    margin-bottom:6px;
+  }
+  .meta-left .to-line{
+    font-family:'Fraunces';
+    font-size:18px;
+    font-weight:600;
+    color:var(--ink);
+  }
+  .stamp{
+    width:64px; height:64px;
+    border-radius:50%;
+    border:2px dashed var(--postmark);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    transform: rotate(-9deg) scale(0);
+    opacity:0;
+    transition: transform .5s cubic-bezier(.34,1.56,.64,1), opacity .3s ease;
+    flex-shrink:0;
+  }
+  .stamp.show{ transform: rotate(-9deg) scale(1); opacity:1; }
+  .stamp-inner{
+    font-family:'Caveat';
+    font-weight:700;
+    font-size:11px;
+    color:var(--postmark);
+    line-height:1.15;
+  }
+
+  .poem-text{
+    flex:1;
+    font-family:'Caveat';
+    font-size:25px;
+    line-height:1.5;
+    color:var(--ink);
+    white-space:pre-wrap;
+    word-break:break-word;
+  }
+  .poem-text:empty::before{
+    content: attr(data-placeholder);
+    font-family:'Karla';
+    font-size:14.5px;
+    color:var(--ink-soft);
+    white-space:normal;
+  }
+  .poem-text .loading-dots::after{
+    content:'';
+    animation: dots 1.2s steps(4,end) infinite;
+  }
+  @keyframes dots{ 0%{content:''} 25%{content:'.'} 50%{content:'..'} 75%{content:'...'} 100%{content:''} }
+
+  .postcard-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-top:18px;
+    margin-top:18px;
+    border-top:1px dashed var(--line);
+  }
+  .signoff{
+    font-family:'Caveat';
+    font-size:17px;
+    color:var(--ink-soft);
+  }
+  .actions{ display:flex; gap:8px; }
+  .icon-btn{
+    border:1px solid var(--line);
+    background:#fffdf8;
+    color:var(--ink-soft);
+    font-family:'Karla';
+    font-size:12.5px;
+    font-weight:600;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+  }
+  .icon-btn:hover{ border-color: var(--sun-deep); color:var(--ink); }
+
+  .note{
+    margin-top:14px;
+    font-size:12px;
+    color:var(--ink-soft);
+    text-align:center;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <div class="sun-icon"></div>
+    </div>
+    <h1>Sunshine Mail</h1>
+    <p class="tagline">A little verse, written just for them — pick the shape, fill in the details, and watch it land on the page.</p>
+  </header>
+
+  <div class="desk">
+    <!-- COMPOSE PANEL -->
+    <div class="compose">
+      <div class="mode-toggle">
+        <button id="modePoemBtn" class="active">Poem</button>
+        <button id="modeSongBtn">Song Lyrics</button>
+      </div>
+
+      <div class="field" id="poemTypeField">
+        <label for="poemType">Poem style</label>
+        <select id="poemType">
+          <option value="haiku">Haiku</option>
+          <option value="limerick">Limerick</option>
+          <option value="free verse">Free Verse</option>
+          <option value="slam poetry / spoken word">Slam / Spoken Word</option>
+          <option value="traditional rhyme (AABB couplets)">Traditional Rhyme (AABB)</option>
+          <option value="sonnet">Sonnet</option>
+          <option value="iambic pentameter (blank verse)">Iambic Pentameter</option>
+          <option value="acrostic, spelling out the name">Acrostic</option>
+          <option value="ballad">Ballad</option>
+        </select>
+      </div>
+
+      <div class="field" id="tuneField" style="display:none;">
+        <label for="tune">Sing it to the tune of</label>
+        <select id="tune">
+          <option value="Happy Birthday to You">Happy Birthday to You</option>
+          <option value="On Top of Old Smokey">On Top of Old Smokey</option>
+          <option value="She'll Be Coming 'Round the Mountain">She'll Be Coming 'Round the Mountain</option>
+          <option value="The Farmer in the Dell">The Farmer in the Dell</option>
+          <option value="Twinkle Twinkle Little Star">Twinkle Twinkle Little Star</option>
+          <option value="Mary Had a Little Lamb">Mary Had a Little Lamb</option>
+          <option value="Auld Lang Syne">Auld Lang Syne</option>
+          <option value="Oh My Darling Clementine">Oh My Darling Clementine</option>
+          <option value="This Old Man">This Old Man</option>
+          <option value="Row, Row, Row Your Boat">Row, Row, Row Your Boat</option>
+        </select>
+        <p class="hint">These are all old enough to be in the public domain, so they're safe to build a product around. Newer folk-revival songs (like "Where Have All the Flowers Gone," written by Pete Seeger in 1955) are still copyrighted — worth keeping off a commercial list, or checking with a lawyer first.</p>
+      </div>
+
+      <div class="grid2">
+        <div class="field">
+          <label for="name">Their name</label>
+          <input type="text" id="name" placeholder="e.g. Margaret">
+        </div>
+        <div class="field">
+          <label for="occasion">Occasion</label>
+          <select id="occasion">
+            <option value="birthday">Birthday</option>
+            <option value="anniversary">Anniversary</option>
+            <option value="wedding">Wedding</option>
+            <option value="new baby">New Baby</option>
+            <option value="graduation">Graduation</option>
+            <option value="get well soon">Get Well Soon</option>
+            <option value="sympathy / in memory">Sympathy / In Memory</option>
+            <option value="retirement">Retirement</option>
+            <option value="congratulations">Congratulations</option>
+            <option value="just because / thinking of you">Just Because</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="relationship">Your relationship to them <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></label>
+        <input type="text" id="relationship" placeholder="e.g. granddaughter, best friend, coworker">
+      </div>
+
+      <div class="field">
+        <label for="details">A detail or two to weave in <span style="font-weight:400; text-transform:none; letter-spacing:0;">(optional)</span></label>
+        <textarea id="details" placeholder="e.g. she loves her garden roses, turning 80, always tells the same fishing story"></textarea>
+      </div>
+
+      <button class="send-btn" id="generateBtn">✦ Write the verse</button>
+      <div class="error-box" id="errorBox"></div>
+    </div>
+
+    <!-- POSTCARD PANEL -->
+    <div class="postcard-stage">
+      <div class="postcard">
+        <div class="airmail-edge"></div>
+        <div class="postcard-body">
+          <div class="postcard-meta">
+            <div class="meta-left">
+              <span class="occasion-tag" id="cardOccasion">Birthday</span>
+              <div class="to-line" id="cardTo">For —</div>
+            </div>
+            <div class="stamp" id="stamp">
+              <div class="stamp-inner">SUNSHINE<br>MAIL<br>★ ★ ★</div>
+            </div>
+          </div>
+          <div class="poem-text" id="poemText" data-placeholder="Fill in the details on the left, then press “Write the verse” — your poem will appear here, ready to send."></div>
+          <div class="postcard-footer">
+            <div class="signoff" id="signoff"></div>
+            <div class="actions">
+              <button class="icon-btn" id="copyBtn">Copy text</button>
+              <button class="icon-btn" id="resetBtn">Write another</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Prototype only — generated text comes straight from Claude. For a real product, add saved drafts, print-ready card layouts, and a payment step.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const modePoemBtn = document.getElementById('modePoemBtn');
+const modeSongBtn = document.getElementById('modeSongBtn');
+const poemTypeField = document.getElementById('poemTypeField');
+const tuneField = document.getElementById('tuneField');
+const generateBtn = document.getElementById('generateBtn');
+const errorBox = document.getElementById('errorBox');
+const poemText = document.getElementById('poemText');
+const cardOccasion = document.getElementById('cardOccasion');
+const cardTo = document.getElementById('cardTo');
+const signoff = document.getElementById('signoff');
+const stamp = document.getElementById('stamp');
+const copyBtn = document.getElementById('copyBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let mode = 'poem';
+
+modePoemBtn.addEventListener('click', () => {
+  mode = 'poem';
+  modePoemBtn.classList.add('active');
+  modeSongBtn.classList.remove('active');
+  poemTypeField.style.display = '';
+  tuneField.style.display = 'none';
+});
+modeSongBtn.addEventListener('click', () => {
+  mode = 'song';
+  modeSongBtn.classList.add('active');
+  modePoemBtn.classList.remove('active');
+  poemTypeField.style.display = 'none';
+  tuneField.style.display = '';
+});
+
+function occasionLabel(value){
+  const map = {
+    'birthday':'Birthday', 'anniversary':'Anniversary', 'wedding':'Wedding',
+    'new baby':'New Baby', 'graduation':'Graduation', 'get well soon':'Get Well',
+    'sympathy / in memory':'In Memory', 'retirement':'Retirement',
+    'congratulations':'Congratulations', 'just because / thinking of you':'Just Because'
+  };
+  return map[value] || value;
+}
+
+function buildPrompt(){
+  const name = document.getElementById('name').value.trim() || 'a special someone';
+  const occasion = document.getElementById('occasion').value;
+  const relationship = document.getElementById('relationship').value.trim();
+  const details = document.getElementById('details').value.trim();
+
+  let task;
+  if (mode === 'poem'){
+    const style = document.getElementById('poemType').value;
+    task = `Write an original ${style} for ${name}'s ${occasion}.`;
+  } else {
+    const tune = document.getElementById('tune').value;
+    task = `Write original new lyrics, set to the rhythm and meter of "${tune}", celebrating ${name}'s ${occasion}. Do not reuse any of the original song's actual lines or distinctive phrases — write fresh words that simply fit the same singable meter.`;
+  }
+  if (relationship) task += ` It's being written by ${relationship === '' ? 'a loved one' : relationship} of ${name}.`;
+  if (details) task += ` Try to naturally weave in this detail: ${details}.`;
+  task += ` Keep it warm, sincere, and appropriate for a printed greeting card. Respond with ONLY the poem/lyrics text itself — no title, no preamble, no explanation, no quotation marks around it.`;
+  return task;
+}
+
+async function generate(){
+  errorBox.style.display = 'none';
+  generateBtn.disabled = true;
+  generateBtn.textContent = 'Writing…';
+  poemText.textContent = '';
+  poemText.classList.add('loading-dots');
+  stamp.classList.remove('show');
+
+  const name = document.getElementById('name').value.trim() || 'a special someone';
+  const occasion = document.getElementById('occasion').value;
+  cardOccasion.textContent = occasionLabel(occasion);
+  cardTo.textContent = 'For ' + name;
+
+  try{
+    const response = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: buildPrompt() })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || ('Request failed: ' + response.status));
+    const text = (data.text || '').trim();
+    if (!text) throw new Error('No text returned.');
+
+    poemText.classList.remove('loading-dots');
+    poemText.textContent = text;
+    signoff.textContent = '— with sunshine';
+    requestAnimationFrame(() => stamp.classList.add('show'));
+  } catch(err){
+    poemText.classList.remove('loading-dots');
+    poemText.textContent = '';
+    errorBox.textContent = 'Something went wrong generating the verse. ' + err.message;
+    errorBox.style.display = 'block';
+  } finally {
+    generateBtn.disabled = false;
+    generateBtn.textContent = '✦ Write the verse';
+  }
+}
+
+generateBtn.addEventListener('click', generate);
+
+copyBtn.addEventListener('click', () => {
+  const text = poemText.textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    copyBtn.textContent = 'Copied!';
+    setTimeout(() => copyBtn.textContent = 'Copy text', 1400);
+  });
+});
+
+resetBtn.addEventListener('click', () => {
+  document.getElementById('name').value = '';
+  document.getElementById('relationship').value = '';
+  document.getElementById('details').value = '';
+  poemText.textContent = '';
+  signoff.textContent = '';
+  stamp.classList.remove('show');
+  cardOccasion.textContent = 'Birthday';
+  cardTo.textContent = 'For —';
+});
+</script>
+</body>
+</html>
